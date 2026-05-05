@@ -1,0 +1,144 @@
+{% extends 'app/base.html' %}
+{% load static %}
+{% block title %}Buy Now{% endblock title %}
+{% block main-content %}
+<div class="container">
+    <div class="row mt-5">
+        <div class="col-sm-6">
+            <h4>Order Summary</h4>
+            <hr>
+
+            {% for item in cart_product %}
+            <div class="card mb-2">
+                <div class="row no-gutters">
+                    <div class="col-md-8">
+                        <div class="card-body">
+                            <h5>{{ item.product.title }}</h5>
+                            <p>Quantity: {{ item.quantity }}</p>
+                            <p class="fw-bold">Price: {{ item.product.discounted_price }} /-</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-center">
+                        <img src="{{item.product.product_image.url}}" class="img-fluid" alt="{{ item.product.title }}"
+                             height="150" width="150">
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            <p class="fw-bold">Payable Amount: {{total_amount}} /-</p>
+
+            <small>Term and Condition: Lorem ipsum dolor sit amet consectetur adipisicing elit. Mollitia, ullam saepe!
+                Iure optio repellat dolor velit, minus rem. Facilis cumque neque numquam laboriosam, accusantium
+                adipisci nisi nihil in et quis?</small>
+        </div>
+        <div class="col-sm-4 offset-sm-1">
+            <h4>Select Shipping Address</h4>
+            <hr>
+            <form action="/paymentdone" id="myform">
+                {% csrf_token %}
+                {% if address %}
+                {% for a in address %}
+                <div class="card">
+                    <div class="card-body">
+                        <h5>{{ a.name }}</h5>
+                        <p>locality : {{ a.locality }}</p>
+                        <p>City : {{ a.city }}</p>
+                        <p>State : {{ a.state }}</p>
+                        <p>Pincode : {{ a.zipcode }}</p>
+                    </div>
+                </div>
+                <div class="form-check mt-2 mb-5">
+                    <input class="form-check-input" type="radio" name="custid" id="custadd{{ forloop.counter }}"
+                           value="{{ a.id }}">
+                    <label class="form-check-label fw-bold" for="custadd{{ forloop.counter }}">
+                        Address {{ forloop.counter }}
+                    </label>
+                </div>
+                {% endfor %}
+
+                <div class="text-end">
+                    <!-- Set up a container element for the button -->
+                    <div class="text-end">
+                        <button id="rzp-button1" class="btn btn-warning mt-3 px-5 fw-bold">Pay</button>
+                    </div>
+                </div>
+                {% else %}
+                <div id="cart-message" style="text-align: center; padding: 20px; font-family: Arial, sans-serif;">
+                    <p style="font-size: 18px; color: #FF6347; background-color: #FFF3F3; padding: 15px; border-radius: 5px; border: 1px solid #FFA07A;">
+                        Please add a shipping address to proceed.
+                    </p>
+                </div>
+                {% endif %}
+
+
+            </form>
+
+        </div>
+    </div>
+</div>
+{% endblock main-content %}
+
+{% block payment-gateway %}
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+  var options = {
+    "key": "{{ api_key }}", // Enter the Key ID generated from the Dashboard
+    "amount": "{{ total_amount|floatformat:0 }}00", // Amount is in currency subunits. Default currency is INR. Hence, 50000 means 50000 paisa or ₹500.
+    "currency": "INR",
+    "name": "Your Company Name",
+    "description": "Test Transaction",
+    "image": "https://example.com/your_logo",
+    "order_id": "{{ payment_order_id }}", //This is a sample Order ID. Pass the `id` obtained in the response of createOrder().
+    "handler": function (response){
+      alert("Payment successful!");
+      document.getElementById('myform').submit();
+      // You can send the payment response to the server for verification and further processing
+      $.ajax({
+        url: '/payment/status/',
+        type: 'post',
+        data: {
+          razorpay_payment_id: response.razorpay_payment_id,
+          razorpay_order_id: response.razorpay_order_id,
+          razorpay_signature: response.razorpay_signature,
+          csrfmiddlewaretoken: '{{ csrf_token }}'
+        },
+        success: function (response) {
+          window.location.href = "/payment/success/";
+
+
+        }
+      });
+    },
+    "prefill": {
+      "name": "{{ user.username }}",
+      "email": "{{ user.email }}",
+      "contact": "9999999999"
+    },
+    "notes": {
+      "address": "{{ address.0.locality }} {{ address.0.city }} {{ address.0.state }} {{ address.0.zipcode }}"
+    },
+    "theme": {
+      "color": "#3399cc"
+    }
+  };
+  var rzp1 = new Razorpay(options);
+  rzp1.on('payment.failed', function (response){
+    alert(response.error.code);
+    alert(response.error.description);
+    alert(response.error.source);
+    alert(response.error.step);
+    alert(response.error.reason);
+    alert(response.error.metadata.order_id);
+    alert(response.error.metadata.payment_id);
+  });
+
+  document.getElementById('rzp-button1').onclick = function(e){
+    rzp1.open();
+    e.preventDefault();
+  }
+
+
+
+</script>
+
+{% endblock payment-gateway %}

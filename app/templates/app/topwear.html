@@ -1,0 +1,77 @@
+{% extends 'app/base.html' %}
+{% load static %}
+{% block title %}TopWears{% endblock title %}
+{% block head %}
+<style>
+    .item:hover img {
+        transform: scale(1.1);
+    }
+    .filter-dropdown {
+        display: inline-block;
+        background-color: #f8f9fa;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 10px;
+        font-size: 1rem;
+        font-weight: bold;
+        color: #333;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-left: 20px;
+    }
+    .filter-dropdown select {
+        border: none;
+        background: none;
+        font-size: 1rem;
+        color: #333;
+        cursor: pointer;
+    }
+</style>
+{% endblock %}
+{% block main-content %}
+<div style="text-align: center; margin: 20px 0;">
+    <div style="
+        display: inline-block;
+        background-color: #f8f9fa;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 10px 20px;
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #333;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    ">TopWears</div>
+    <!-- Filter Dropdown -->
+    <div class="filter-dropdown">
+        <form method="get" action="{% url 'topwear' %}">
+            <label for="price">Price Range:</label>
+            <select id="price" name="price" onchange="this.form.submit()">
+                <option value="">All</option>
+                <option value="below_15k" {% if request.GET.price == 'below_15k' %}selected{% endif %}> Below ₹15,999 </option>
+                <option value="16k-35k" {% if request.GET.price == '16k-35k' %}selected{% endif %} >₹16,000 - ₹35,999</option>
+                <option value="36k-50k" {% if request.GET.price == '36k-50k' %}selected{% endif %} >₹36,000 - ₹50,999</option>
+                <option value="51k-75k" {% if request.GET.price == '51k-75k' %}selected{% endif %} >₹51,000 - ₹75,999</option>
+                <option value="76k-90k" {% if request.GET.price == '76k-90k' %}selected{% endif %} >₹76,000 - ₹90,999</option>
+                <option value="91k-1l" {% if request.GET.price == '91k-1l' %}selected{% endif %} >₹91,000 - ₹1,00,000</option>
+                <option value="more_than_1l" {% if request.GET.price == 'more_than_1l' %}selected {%endif%} >More than ₹1,00,001</option>
+            </select>
+        </form>
+    </div>
+</div>
+<div class="container my-5">
+    <div class="row">
+        {% for t in top %}
+        <div class="col-sm-4 col-md-3 text-center mb-3">
+            <a href="{% url 'product-detail' t.id %}" class="btn">
+                <div class="item" style="padding: 10px; border: 1px solid #ddd; border-radius: 8px;">
+                    <img src="{{ t.product_image.url }}" alt="{{ t.title }}" style="height: 200px; width: auto; max-width: 100%; border-radius: 4px;">
+                    <div class="fw-bold mt-2" style="font-size: 1rem;">{{ t.title|slice:"0:30" }}..</div>
+                    <div class="fw-bold mt-1" style="font-size: 0.9rem;">Rs. {{ t.discounted_price }}
+                        <small class="fw-light text-decoration-line-through">{{ t.selling_price }}</small>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock main-content %}

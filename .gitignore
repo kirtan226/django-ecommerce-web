@@ -216,3 +216,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Ignore Django migrations
+*/migrations/*
+!*/migrations/__init__.py

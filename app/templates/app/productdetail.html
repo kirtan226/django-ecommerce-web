@@ -1,0 +1,75 @@
+{% extends 'app/base.html' %}
+{% load static %}
+{% block title %}Product Detail{% endblock title %}
+{% block main-content %}
+<div class="container my-5">
+    <div class="row">
+        <div class="col-sm-6 text-center align-self-center">
+
+            <img src='/media/{{product.product_image}}' alt="" class="img-fluid img-thumbnail">
+        </div>
+        <div class="col-sm-5 offset-sm-1">
+            <h2>{{product.title}}</h2>
+            <hr>
+            <h5><strong>Manufacturer : </strong> {{ product.brand }}</h5>
+            <br>
+            <ul>
+                {% for line in description_list %}
+                <li>{{ line }}</li>
+                {% endfor %}
+            </ul>
+            <br>
+            <h4>Rs. {{product.discounted_price}}/- </h4>
+            <h5><br>
+                MRP :<small class="fw-light text-decoration-line-through"> {{product.selling_price}}/-</small>
+                <span style="background-color: #4cb84c; color: white; padding: 0px 2px; margin-left: 2px; border-radius: 3px; font-size: 0.9em;">
+    save Rs. {{saved_price}}/-
+</span>
+            </h5> <br>
+            <!--      -->
+            <!--   <form action="/add-to-cart" class="d-inline">-->
+            <!--    <input type="hidden" name="prod_id" value={{product.id}} id="prod_id">-->
+            <!--    <button type="submit" class="btn btn-primary shadow px-5 py-2"> Add To Cart</button>-->
+
+
+            <!--   </form>-->
+            {% if request.user.is_authenticated %}
+            {% if product.id in cart %}
+            <!--        <p style="color: red; font-weight: bold; font-size: 16px;">Product already in cart</p>-->
+            <button class="btn btn-danger"
+                    style="color: white; background-color: #ff6666; border: none; padding: 10px 20px; border-radius: 5px;">
+                Product already in cart
+            </button>
+            {% else %}
+            <form action="{% url 'add-to-cart' %}" class="d-inline">
+                {% csrf_token %}
+                <input type="hidden" name="prod_id" value="{{ product.id }}" id="prod_id">
+                <button type="submit" class="btn btn-primary shadow px-5 py-2">Add To Cart</button>
+            </form>
+            {% endif %}
+            {% endif %}
+
+            {% if not request.user.is_authenticated %}
+            <form action="/accounts/login" class="d-inline">
+                {% csrf_token %}
+<!--                <input type="hidden" name="prod_id" value="{{ product.id }}" id="prod_id">-->
+                <button type="submit" class="btn btn-primary shadow px-5 py-2">Add To Cart</button>
+            </form>
+            {% endif %}
+
+
+            <!--   <a href="{% url 'add-to-cart' %}" class="btn btn-primary shadow px-5 py-2">Add to Cart</a>-->
+            <a href="{% url 'checkout' %}" class="btn btn-danger shadow px-5 py-2 ms-4">Buy Now</a>
+            <h5 class="mt-5">Available Offers</h5>
+            <ul>
+                <li>Bank Offer 5% Unlimited Cashback on Flipkart Axis Bank Credit</li>
+                <li>Special Price Get extra ₹3000 off (price inclusive of discount)</li>
+                <li>No cost EMI ₹1,667/month. Standard EMI also available</li>
+                <li>Partner Offer ₹2000 Flipkart Gift Card on Every 1000th Transaction with a new Visa Debit/Credit
+                    Card
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock main-content %}

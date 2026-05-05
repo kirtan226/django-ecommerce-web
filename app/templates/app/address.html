@@ -1,0 +1,44 @@
+{% extends 'app/base.html' %}
+{% load static %}
+{% block title %}Address{% endblock title %}
+{% block main-content %}
+<div class="container my-5">
+ <div class="row">
+ <h3>Welcome {{request.user}}</h3>
+  <div class="col-sm-2 border-end">
+   <ul class="list-unstyled">
+    <li class="d-grid"><a href="{% url 'profile' %}" class="btn ">Profile</a></li>
+    <li class="d-grid"><a href="{% url 'address' %}" class="btn {{active}}">Address</a></li>
+   </ul>
+  </div>
+  <div class="col-sm-9 offset-sm-1">
+   <div class="row">
+    {%if address %}
+    {% for a in address %}
+    <div class="col-sm-6">
+     <div class="card">
+      <div class="card-body">
+
+       <h3>{{a.name}}</h3>
+       <p>locality : {{a.locality}}</p>
+       <p>City : {{a.city}}</p>
+       <p>State : {{a.state}}</p>
+       <p>Pincode : {{a.zipcode}}</p>
+
+      </div>
+     </div>
+    </div>
+   {% endfor %}
+   {% else %}
+
+    <div id="cart-message" style="text-align: center; padding: 20px; font-family: Arial, sans-serif;">
+     <p style="font-size: 18px; color: #FF6347; background-color: #FFF3F3; padding: 15px; border-radius: 5px; border: 1px solid #FFA07A;">
+        No shipping address added. Please add a shipping address.
+    </p>
+   </div>
+     {% endif %}
+   </div>
+  </div>
+ </div>
+</div>
+{% endblock main-content %}

@@ -1,0 +1,43 @@
+{% extends 'app/base.html' %}
+{% load static %}
+{% block title %}Search Results{% endblock title %}
+{% block head %}
+<style>
+    .item:hover img {
+        transform: scale(1.1);
+    }
+</style>
+{% endblock %}
+
+
+{% block main-content %}
+<div style="text-align: center; margin: 20px 0;">
+   <h2>Search Results for "{{ query }}"</h2>
+    <hr>
+
+<div class="container my-5">
+ <div class="row">
+  {% for product in allproducts %}
+  <div class="col-sm-4 col-md-3 text-center mb-3">
+    <a href="{% url 'product-detail' product.id %}" class="btn">
+      <div class="item" style="padding: 10px; border: 1px solid #ddd; border-radius: 8px;">
+        <img src="{{ product.product_image.url }}" alt="{{ product.title }}" style="height: 200px; width: auto; max-width: 100%; border-radius: 4px;">
+        <div class="fw-bold mt-2" style="font-size: 1rem;">{{ product.title|slice:"0:30" }}..</div>
+        <div class="fw-bold mt-1" style="font-size: 0.9rem;">Rs. {{ product.discounted_price }}
+          <small class="fw-light text-decoration-line-through">{{ product.selling_price }}</small>
+        </div>
+      </div>
+    </a>
+  </div>
+  {% empty %}
+     <div id="cart-message" style="text-align: center; padding: 20px; font-family: Arial, sans-serif;">
+     <p style="font-size: 18px; color: #FF6347; background-color: #FFF3F3; padding: 15px; border-radius: 5px; border: 1px solid #FFA07A;">
+        No products found matching your search criteria.
+    </p>
+   </div>
+<!--  <p>No products found matching your search criteria.</p>-->
+  {% endfor %}
+ </div>
+</div>
+</div>
+{% endblock main-content %}
