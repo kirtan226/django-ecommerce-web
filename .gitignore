@@ -220,3 +220,6 @@ __marimo__/
 # Ignore Django migrations
 */migrations/*
 !*/migrations/__init__.py
+# PyCharm / IDE
+.idea/
+*.iml
