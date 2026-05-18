@@ -10,36 +10,29 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
+import os
 from pathlib import Path
+
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / '.env')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
-# Paypal developer account (US)
-# kirtanpatel2262001@gmail.com -> pass : kirtan@paypal
-
-# Personal-Account ->personalpay226@gmail.com->pass( personalpay226@ )
-# business-Account -> businesspay226@gmail.com->pass ( businesspay226@ )
-
-# paypal shoppinglyx-api link : https://developer.paypal.com/dashboard/applications/edit/SB:QVU2ZHJFMzRFQmswNHEtM1B4elNSOXVza1VKM2dycFZsZG1QZm1zeWVjSWxZNFE5eFI1amZQeTRzVHBrNmtQX0xPbFpfUXBic2hmVEJfUGI=
-
-
-# stripe payment gateway
-# kirtanpatel2262001@gmail.com  --- > Pass( kirtan@stripe )
-
-
-# razropay -> https://dashboard.razorpay.com/app/orders
-
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'REMOVED_DJANGO_SECRET_KEY'
+SECRET_KEY = os.environ['SECRET_KEY']
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1', 'yes')
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.getenv('ALLOWED_HOSTS', '').split(',')
+    if host.strip()
+]
 
 # Application definition
 
@@ -142,11 +135,11 @@ LOGOUT_REDIRECT_URL = '/accounts/login/'
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
-STRIPE_PUBLISHABLE_KEY = 'REMOVED_STRIPE_PUBLISHABLE_KEY'
-STRIPE_SECRET_KEY = 'REMOVED_STRIPE_SECRET_KEY'
+STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY', '')
+STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY', '')
 STRIPE_SUCCESS_URL = '/paymentdone/'
 STRIPE_CANCEL_URL = '/cart/'
 
-APPEND_SLASH=False
-RAZORPAY_API_KEY = 'REMOVED_RAZORPAY_API_KEY'
-RAZORPAY_API_SECRET_KEY = 'REMOVED_RAZORPAY_API_SECRET_KEY'
+APPEND_SLASH = False
+RAZORPAY_API_KEY = os.getenv('RAZORPAY_API_KEY', '')
+RAZORPAY_API_SECRET_KEY = os.getenv('RAZORPAY_API_SECRET_KEY', '')
