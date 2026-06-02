@@ -20,7 +20,7 @@
     <link rel="stylesheet" href="{% static 'app/css/style.css' %}">
 
 
-    <title>ShoppinglyX | {% block title %} {% endblock title %} </title>
+    <title>ShopNest | {% block title %} {% endblock title %} </title>
 
     <style>
     .nav-link:hover,
@@ -28,14 +28,40 @@
         font-weight: bold;
     }
 
+    .shopnest-header {
+        background-color: #851f1f;
+    }
+
+    html,
+    body {
+        min-height: 100vh;
+    }
+
+    body {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .site-content {
+        flex: 1;
+    }
+
+    .required-star {
+        color: #dc3545;
+    }
+
+    .password-toggle {
+        border-left: 0;
+    }
+
 
     </style>
     {% block head %}{% endblock %}
 </head>
 <body>
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+<nav class="navbar navbar-expand-lg navbar-dark shopnest-header">
     <div class="container">
-        <a class="navbar-brand" href="/">ShoppingX</a>
+        <a class="navbar-brand" href="/">ShopNest</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
                 aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
@@ -119,7 +145,7 @@
 <!--                        </ul>-->
 <!--                    </li>-->
                     <li class="nav-item mx-2">
-                        <a href="{% url 'showcart' %}" class="nav-link text-white">Cart <span class="badge bg-danger">{{cart_item_count}}</span>
+                        <a href="{% url 'showcart' %}" class="nav-link text-white">Cart <span class="badge bg-danger" id="cartItemCount">{{cart_item_count}}</span>
                         </a>
                     </li>
 
@@ -138,8 +164,10 @@
 </nav>
 {% block banner_slider %} {% endblock banner_slider %}
 {% block livesale %} {% endblock livesale %}
+<main class="site-content">
 {% block main-content %} {% endblock main-content %}
 {% block payment-gateway %} {% endblock payment-gateway %}
+</main>
 
 <!-- Start Footer -->
 <footer class="container-fluid bg-dark text-center p-2 mt-5">
@@ -158,5 +186,24 @@
 <script src="{% static 'app/js/owl.carousel.min.js' %}"></script>
 <script src="{% static 'app/js/all.min.js' %}"></script>
 <script src="{% static 'app/js/myscript.js' %}"></script>
+<script>
+document.querySelectorAll('.js-password-toggle').forEach(function (button) {
+    button.addEventListener('click', function () {
+        const targetId = button.getAttribute('data-target');
+        const passwordInput = document.getElementById(targetId);
+        const icon = button.querySelector('i');
+
+        if (!passwordInput || !icon) {
+            return;
+        }
+
+        const isPassword = passwordInput.type === 'password';
+        passwordInput.type = isPassword ? 'text' : 'password';
+        button.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+        icon.classList.toggle('fa-eye', !isPassword);
+        icon.classList.toggle('fa-eye-slash', isPassword);
+    });
+});
+</script>
 </body>
 </html>

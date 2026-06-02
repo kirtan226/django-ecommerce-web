@@ -1,11 +1,13 @@
 from django.db.models import Q, QuerySet
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, redirect
+from django.urls import reverse_lazy
 from django.views import View
-from .models import Customer, Product, Cart, OrderPlaced
-from .forms import CustomerRegistrationForm, CustomerProfileForm
+from .models import Customer, Product, Cart, OrderPlaced, CoverImage
+from .forms import CustomerRegistrationForm, CustomerProfileForm, LoginForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.views import LoginView
 from django.utils.decorators import method_decorator
 from django.conf import settings
 import razorpay
@@ -37,13 +39,15 @@ class ProductView(View):
         bottomwears = Product.objects.filter(category='BW')
         mobiles = Product.objects.filter(category='M')
         laptop = Product.objects.filter(category='L')
+        cover_images = CoverImage.objects.filter(is_active=True)
 
-        print(topwears)
-        print(bottomwears)
-        print(mobiles)
-        print(laptop)
-
-        parameter = {'topwears': topwears, 'bottomwears': bottomwears, 'mobiles': mobiles, 'laptops': laptop}
+        parameter = {
+            'topwears': topwears,
+            'bottomwears': bottomwears,
+            'mobiles': mobiles,
+            'laptops': laptop,
+            'cover_images': cover_images,
+        }
 
         return render(request, 'app/home.html', parameter)
 
@@ -51,6 +55,7 @@ class ProductView(View):
 # def product_detail(request):
 #  return render(request, 'app/productdetail.html')
 
+@method_decorator(login_required, name='dispatch')
 class Productdetails(View):
     def get(self, request, pk):
         product = Product.objects.get(pk=pk)
@@ -97,11 +102,20 @@ def search(request):
 def add_to_cart(request):
     user = request.user
     product_id = request.GET.get('prod_id')
-    # print(product.description)
     product = Product.objects.get(id=product_id)
+    cart_item = Cart.objects.filter(user=user, product=product).first()
+    created = cart_item is None
+    if created:
+        Cart.objects.create(user=user, product=product)
 
-    Cart(user=user, product=product).save()
-    return redirect('/cart')
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({
+            'added': created,
+            'message': 'Product added to cart' if created else 'Product already in cart',
+            'cart_item_count': Cart.objects.filter(user=user).count(),
+        })
+
+    return redirect('showcart')
 
 
 
@@ -112,136 +126,90 @@ def show_cart(request):
         cart = Cart.objects.filter(user=user)
 
         l = len(cart)
-        all = Cart.objects.all()
-        amount = 0.0
         shipping_charges = 70.0
-        total_amount = 0.0
 
-        cart_product = [p for p in all if p.user == user]
-        print(cart_product)
+        cart_product = Cart.objects.filter(user=user).select_related('product')
         total = 0
         if cart_product:
             for p in cart_product:
                 temp = (p.quantity * p.product.discounted_price)
                 total += int(temp)
-        # with shipping charges
-        print(type(total))
 
         if total <= 1500:
             total_amount = total + shipping_charges
             ship = True
-            print("i am if ==========", total_amount)
         else:
             total_amount = total
             ship = False
-            print("i am else without shipping ==========", total_amount)
 
-        print("Without shipping =====", total)
-        print("With shipping =====", total_amount)
         params = {'carts': cart, 'total': total, 'cart_product': cart_product, 'total_amount': total_amount, 'len': l,
                   'ship': ship}
         return render(request, 'app/addtocart.html', params)
 
 
+def get_cart_summary(user):
+    total = 0
+    for item in Cart.objects.filter(user=user).select_related('product'):
+        total += int(item.quantity * item.product.discounted_price)
+
+    shipping_charges = 70.0
+    ship = total <= 1500 and total > 0
+    total_amount = total + shipping_charges if ship else total
+
+    return {
+        'amount': total,
+        'totalamount': total_amount,
+        'ship': ship,
+        'cart_item_count': Cart.objects.filter(user=user).count(),
+        'cart_empty': not Cart.objects.filter(user=user).exists(),
+    }
+
+
+@login_required
 def plus_cart(request):
     if request.method == 'GET':
         prod_id = request.GET['prod_id']
-        print(prod_id)
-        c = Cart.objects.get(Q(product=prod_id) & Q(user=request.user))
+        c = Cart.objects.filter(Q(product=prod_id) & Q(user=request.user)).first()
+        if c is None:
+            return JsonResponse({'error': 'Cart item not found'}, status=404)
+
         c.quantity += 1
         c.save()
-
-        amount = 0.0
-        shipping_charges = 70.0
-        total_amount = 0.0
-        all = Cart.objects.all()
-        cart_product = [p for p in all if p.user == request.user]
-        # print(cart_product)
-        total = 0
-        if cart_product:
-            for p in cart_product:
-                temp = (p.quantity * p.product.discounted_price)
-                total += int(temp)
-
-        # with shipping charges
-        # print(type(total))
-        if total <= 1500:
-            total_amount = total + shipping_charges
-            ship = True
-            # print("i am if ==========", total_amount)
-        else:
-            total_amount = total
-            ship = False
-            # print("i am else without shipping ==========", total_amount)
-
-        data = {
-            'quantity': c.quantity, 'amount': total, 'totalamount': total_amount, 'ship': ship
-        }
+        data = {'quantity': c.quantity, 'removed': False}
+        data.update(get_cart_summary(request.user))
         return JsonResponse(data)
 
 
+@login_required
 def minus_cart(request):
     if request.method == 'GET':
         prod_id = request.GET['prod_id']
-        c = Cart.objects.get(Q(product=prod_id) & Q(user=request.user))
-        c.quantity -= 1
-        c.save()
+        c = Cart.objects.filter(Q(product=prod_id) & Q(user=request.user)).first()
+        if c is None:
+            return JsonResponse({'error': 'Cart item not found'}, status=404)
 
-        amount = 0.0
-        shipping_charges = 70.0
-        total_amount = 0.0
-        all = Cart.objects.all()
-        cart_product = [p for p in all if p.user == request.user]
-        # print(cart_product)
-        total = 0
-        if cart_product:
-            for p in cart_product:
-                temp = (p.quantity * p.product.discounted_price)
-                total += int(temp)
-        # with shipping charges
-        # print(type(total))
-        if total <= 1500:
-            ship = True
-            total_amount = total + shipping_charges
-            # print("i am if ==========", total_amount)
+        removed = False
+        if c.quantity <= 1:
+            c.delete()
+            removed = True
+            quantity = 0
         else:
-            total_amount = total
-            ship = False
-        data = {
-            'quantity': c.quantity, 'amount': total, 'totalamount': total_amount, 'ship': ship
-        }
+            c.quantity -= 1
+            c.save()
+            quantity = c.quantity
+
+        data = {'quantity': quantity, 'removed': removed}
+        data.update(get_cart_summary(request.user))
         return JsonResponse(data)
 
 
+@login_required
 def remove_cart(request):
     if request.method == 'GET':
         prod_id = request.GET['prod_id']
-        c = Cart.objects.get(Q(product=prod_id) & Q(user=request.user))
-        c.delete()
-
-        amount = 0.0
-        shipping_charges = 70.0
-        total_amount = 0.0
-        all = Cart.objects.all()
-        cart_product = [p for p in all if p.user == request.user]
-        # print(cart_product)
-        total = 0
-        if cart_product:
-            for p in cart_product:
-                temp = (p.quantity * p.product.discounted_price)
-                total += int(temp)
-        # with shipping charges
-        # print(type(total))
-        if total <= 1500:
-            total_amount = total + shipping_charges
-            ship = True
-            # print("i am if ==========", total_amount)
-        else:
-            total_amount = total
-            ship = False
-        data = {
-            'quantity': c.quantity ,'amount': total, 'totalamount': total_amount, 'ship': ship
-        }
+        Cart.objects.filter(Q(product=prod_id) & Q(user=request.user)).delete()
+        data = {'quantity': 0, 'removed': True}
+        data.update(get_cart_summary(request.user))
         return JsonResponse(data)
 
 
@@ -384,6 +352,17 @@ def laptop(request):
 
 # def login(request):
 #  return render(request, 'app/login.html')
+
+class EmailLoginView(LoginView):
+    template_name = 'app/login.html'
+    authentication_form = LoginForm
+    redirect_authenticated_user = True
+
+    def get_success_url(self):
+        if Customer.objects.filter(user=self.request.user).exists():
+            return reverse_lazy('ptoductview')
+        return reverse_lazy('profile')
+
 
 # def customerregistration(request):
 #  return render(request, 'app/customerregistration.html')

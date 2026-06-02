@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.urls import reverse
 from django.utils.html import format_html
 
-from .models import Customer , Product , Cart , OrderPlaced
+from .models import Customer , Product , Cart , OrderPlaced, CoverImage
 
 # admin.site.register(Customer)
 # admin.site.register(Product)
@@ -19,6 +19,13 @@ class ProductModelAdmin(admin.ModelAdmin):
         ,'brand','category','product_image']
     search_fields = ['category']
     list_filter = ['category']
+
+@admin.register(CoverImage)
+class CoverImageModelAdmin(admin.ModelAdmin):
+    list_display = ['id', 'title', 'display_order', 'is_active', 'image']
+    list_editable = ['display_order', 'is_active']
+    search_fields = ['title']
+    list_filter = ['is_active']
 
 @admin.register(Cart)
 class CartModelAdmin(admin.ModelAdmin):

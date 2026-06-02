@@ -36,15 +36,15 @@
             {% if request.user.is_authenticated %}
             {% if product.id in cart %}
             <!--        <p style="color: red; font-weight: bold; font-size: 16px;">Product already in cart</p>-->
-            <button class="btn btn-danger"
+            <button class="btn btn-danger" type="button" disabled
                     style="color: white; background-color: #ff6666; border: none; padding: 10px 20px; border-radius: 5px;">
                 Product already in cart
             </button>
             {% else %}
-            <form action="{% url 'add-to-cart' %}" class="d-inline">
+            <form action="{% url 'add-to-cart' %}" class="d-inline" id="addToCartForm">
                 {% csrf_token %}
                 <input type="hidden" name="prod_id" value="{{ product.id }}" id="prod_id">
-                <button type="submit" class="btn btn-primary shadow px-5 py-2">Add To Cart</button>
+                <button type="submit" class="btn btn-primary shadow px-5 py-2" id="addToCartBtn">Add To Cart</button>
             </form>
             {% endif %}
             {% endif %}
@@ -72,4 +72,51 @@
         </div>
     </div>
 </div>
+<script>
+const addToCartForm = document.getElementById('addToCartForm');
+
+if (addToCartForm) {
+    addToCartForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+
+        const button = document.getElementById('addToCartBtn');
+        const formData = new FormData(addToCartForm);
+        const params = new URLSearchParams(formData);
+
+        button.disabled = true;
+        button.innerText = 'Adding...';
+
+        fetch(`${addToCartForm.action}?${params.toString()}`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        })
+            .then(function (response) {
+                if (!response.ok) {
+                    throw new Error('Unable to add product to cart.');
+                }
+                return response.json();
+            })
+            .then(function (data) {
+                button.classList.remove('btn-primary');
+                button.classList.add('btn-danger');
+                button.innerText = 'Product already in cart';
+                button.style.color = 'white';
+                button.style.backgroundColor = '#ff6666';
+                button.style.border = 'none';
+
+                const cartItemCount = document.getElementById('cartItemCount');
+                if (cartItemCount) {
+                    cartItemCount.innerText = data.cart_item_count;
+                }
+            })
+            .catch(function () {
+                button.disabled = false;
+                button.innerText = 'Add To Cart';
+                alert('Could not add this product to cart. Please try again.');
+            });
+    });
+}
+</script>
 {% endblock main-content %}

@@ -53,6 +53,19 @@ CATEGORY_CHOICES = (('M','Mobile'),
                  ('TW','Top Wear'),
                  ('BW','Bottom Wear'),)
 
+class CoverImage(models.Model):
+    title = models.CharField(max_length=100)
+    image = models.ImageField(upload_to='coverimg')
+    display_order = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['display_order', 'id']
+
+    def __str__(self):
+        return self.title
+
+
 class Product(models.Model):
     title=models.CharField(max_length=100)
     selling_price = models.FloatField()
@@ -99,4 +112,3 @@ class OrderPlaced(models.Model):
     # @property
     # def total_cost(self):
     #     return (self.quantity * self.product.discounted_price)
-

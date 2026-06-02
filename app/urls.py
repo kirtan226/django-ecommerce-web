@@ -16,12 +16,13 @@ Including another URLconf
 """
 
 from django.urls import path
+from django.views.generic import RedirectView
 from . import views
 from django.conf import settings
 from django.conf.urls.static import static
-from .views import ProductView, Productdetails, customerregistration, ProfileView
+from .views import ProductView, Productdetails, customerregistration, ProfileView, EmailLoginView
 from django.contrib.auth import views as auth_views
-from .forms import LoginForm, MypasswordChangeForm, MypasswordResetForm, MysetpasswordForm
+from .forms import MypasswordChangeForm, MypasswordResetForm, MysetpasswordForm
 from django.urls import reverse_lazy
 
 urlpatterns = [
@@ -30,6 +31,7 @@ urlpatterns = [
                   # path('product-detail/', views.product_detail, name='product-detail'),
                   path('product-detail/<int:pk>', Productdetails.as_view(), name='product-detail'),
                   path('add-to-cart/', views.add_to_cart, name='add-to-cart'),
+                  path('cart', RedirectView.as_view(pattern_name='showcart', permanent=False)),
                   path('cart/', views.show_cart, name='showcart'),
 
                   # path('pluscart/', views.plus_cart, name='pluscart'),
@@ -54,9 +56,7 @@ urlpatterns = [
                   # path('mobile/<slug:data>', views.mobile, name='mobile'),
                   path('laptop/', views.laptop, name='laptop'),
 
-                  path('accounts/login/',
-                       auth_views.LoginView.as_view(template_name='app/login.html', authentication_form=LoginForm),
-                       name='login'),
+                  path('accounts/login/', EmailLoginView.as_view(), name='login'),
                   path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
 
                   # path('passwordchange/',auth_views.PasswordChangeView.as_view(template_name='app/passwordchange.html',form_class = MypasswordChangeForm , success_url='/passwordchangedone'),name ='passwordchange') ,
